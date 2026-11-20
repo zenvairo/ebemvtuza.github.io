@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>TikTok — поиск и обработка моделей</title>
+<style>
+  :root {
+    --bg: #000000;
+    --surface: #0c0c0f;
+    --surface-2: #121216;
+    --red: #ff1e3c;
+    --red-soft: #ff4d64;
+    --red-dim: #8b0f22;
+    --text: #e9e9ee;
+    --muted: #9a9aa6;
+    --line: #1e1e24;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.65;
+    padding: 0 16px 64px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  #progress {
+    position: fixed; top: 0; left: 0;
+    height: 2px; width: 0%;
+    background: var(--red);
+    z-index: 10;
+    transition: width .1s linear;
+  }
+
+  header { text-align: center; padding: 72px 0 48px; }
+  h1 {
+    font-size: clamp(30px, 5vw, 44px);
+    font-weight: 800;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  h1 .r { color: var(--red); }
+  .sub { color: var(--muted); font-size: 15px; margin-top: 10px; }
+  .divider { width: 64px; height: 2px; margin: 28px auto 0; background: var(--red); }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 48px;
+  }
+  .stats > div {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 20px 12px;
+    text-align: center;
+  }
+  .stats .num {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--red-soft);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .stats .cap { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
+  .part {
+    margin: 56px 0 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .part .lbl {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .part h2 {
+    font-size: 22px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+  .part h2 .r { color: var(--red); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 12px;
+    transition: border-color .2s ease;
+  }
+  .card:hover { border-color: #2e2e38; }
+  .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: #fff; }
+  .card h3 .idx {
+    color: var(--red-soft);
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    margin-right: 8px;
+  }
+  .card p + ul { margin-top: 10px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 7px; }
+  li::marker { color: var(--red-dim); }
+  b { color: #fff; }
+  .r { color: var(--red-soft); font-weight: 600; }
+  .note { color: var(--muted); font-size: 13px; margin-top: 12px; }
+
+  .quote {
+    border-left: 2px solid var(--red-dim);
+    background: var(--surface-2);
+    padding: 12px 16px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    color: #c9c9d4;
+    margin: 12px 0 4px;
+    font-size: 14.5px;
+    white-space: pre-line;
+  }
+  .quote .qt { color: var(--red-soft); font-weight: 700; font-style: normal; }
+
+  .steps { counter-reset: step; list-style: none; padding-left: 0; }
+  .steps li {
+    list-style: none;
+    counter-increment: step;
+    position: relative;
+    padding-left: 38px;
+    margin-bottom: 12px;
+  }
+  .steps li::before {
+    content: counter(step, decimal-leading-zero);
+    position: absolute;
+    left: 0; top: 1px;
+    font-family: Consolas, monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--red-soft);
+  }
+
+  .tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .tbl th, .tbl td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  .tbl th {
+    color: var(--muted);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    font-weight: 600;
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+  .tbl td { color: #c9c9d4; }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .tbl .hl { color: var(--red-soft); font-weight: 700; }
+  .tbl .bad { color: var(--red-soft); font-weight: 700; }
+  .tbl .ok { color: #8fd77f; font-weight: 700; }
+
+  .shot {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-top: 14px;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .shot img { width: 100%; height: auto; display: block; }
+  .shot figcaption, .shot-cap {
+    font-size: 12.5px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 8px;
+    line-height: 1.45;
+  }
+
+  .btn {
+    display: inline-block;
+    background: var(--red);
+    color: #fff;
+    font-weight: 700;
+    padding: 12px 22px;
+    border-radius: 10px;
+    margin-top: 10px;
+    transition: filter .2s ease;
+  }
+  .btn:hover { text-decoration: none; filter: brightness(1.12); }
+  a { color: var(--red-soft); }
+  a:hover { text-decoration: underline; }
+  code { font-family: Consolas, monospace; font-size: .9em; color: var(--red-soft); }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+
+  .js .reveal { opacity: 0; transform: translateY(16px); transition: opacity .5s ease, transform .5s ease; }
+  .js .reveal.on { opacity: 1; transform: none; }
+
+  :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+  @media (max-width: 620px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .card { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div class="wrap">
+
+<header>
+  <h1>TikTok<span class="r"> Manual</span></h1>
+  <div class="sub">Поиск и обработка моделей в TikTok — от настройки аккаунта до записи на собес</div>
+  <div class="divider"></div>
+</header>
+
+<div class="stats">
+  <div><div class="num">3</div><div class="cap">дня на прогрев аккаунта</div></div>
+  <div><div class="num">25–30</div><div class="cap">сообщений в день с одного акка</div></div>
+  <div><div class="num">2–4</div><div class="cap">минуты паузы между отправками</div></div>
+  <div><div class="num">4</div><div class="cap">способа найти кандидатку</div></div>
+</div>
+
+<div class="card reveal">
+  <h3>Коротко о канале</h3>
+  <p>Твой основной канал — <b>TikTok</b>. Здесь больше всего живых девушек: они сами снимают себя, сами сидят в ленте, сами быстрее всего отвечают.</p>
+  <p>Главное правило канала: в тиктоке работает <b>количество, а не качество</b>. Чем больше отписей, комментов и сообщений — тем больше кейсов. Отсюда и режим работы: много, но аккуратно, чтобы не попасть под фильтры платформы.</p>
+  <p>Этот мануал ведёт тебя за руку: аккаунт → прогрев → поиск → скрипты → запись на собес. Анкета, собес и передача кандидата — <a href="../models/">в основном мануале</a>.</p>
+</div>
+
+<!-- ============ 1 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 1</span>
+  <h2>Аккаунт для <span class="r">работы</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">1.1</span>Три варианта получить рабочий акк</h3>
+  <ul>
+    <li><b>Свой личный</b> — если он старый и живой (есть история, лайки, подписчики). Самый безопасный вариант.</li>
+    <li><b>Купленный с накруткой</b> — готовые акки покупаются на <b>lolzteam</b>. Подписчики уже накручены, аккаунт выглядит «живым». Самый быстрый путь.</li>
+    <li><b>Накрутка самому</b> — подкачиваешь подписчики на свой акк. Дешевле, но дольше.</li>
+  </ul>
+  <div class="quote"><span class="qt">Правило ▸</span> Вся автоматизация — мимо. Только ручная работа: подписки, лайки, сообщения — руками.</div>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">1.2</span>Оформление профиля</h3>
+  <p>Она после первого сообщения первым делом зайдёт к тебе на профиль. За 5 секунд решит: живой рекрутер или спам. Настраиваем один раз:</p>
+  <ul>
+    <li><b>Ник:</b> <code>имя.evt</code> — плюс твоя составляющая, например <code>arina.evt</code>.</li>
+    <li><b>Био:</b> <code>EVT Corp HR Manager</code> + <code>tg: имя_тг</code> — переход в телеграм, там вся работа и материалы.</li>
+    <li><b>Аватар:</b> живой, совпадает с аватаром в телеграме.</li>
+    <li><b>Роль:</b> ты рекрутер, а не само агентство. Профиль не должен выглядеть как отдельная официальная страница — агентство передаёшь ссылками и материалами, а не шапкой аккаунта.</li>
+  </ul>
+  <figure class="shot">
+    <img src="../models/img/profile-tt.webp" alt="Пример оформления TikTok-профиля рекрутера" loading="lazy">
+    <figcaption>Пример: ник с агентством, био с ролью и переходом в ТГ</figcaption>
+  </figure>
+  <p class="note">Остальные примеры оформления (Telegram-профили) — в <a href="../models/">основном мануале</a>.</p>
+</div>
+
+<!-- ============ 2 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 2</span>
+  <h2>Прогрев <span class="r">аккаунта</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">2.1</span>Три дня спокойной подготовки</h3>
+  <p>После покупки или регистрации сразу в работу не идём. Новый или «глухой» акк с моментальной активностью летит под фильтры. Прогреваем:</p>
+  <ul class="steps">
+    <li><b>День 1.</b> Ставим приятную аватарку. Био не трогаем. Листаем ленту «Для вас» ~30 минут, ставим <b>5–8 лайков</b> обычным нейтральным роликам. Отлежка до следующего дня.</li>
+    <li><b>День 2.</b> В поиске вбиваем темы: лайфстайл, студентка, эстетика. Смотрим <b>10–15 видео</b>, ставим лайки, <b>2 видео сохраняем в избранное</b>.</li>
+    <li><b>День 3.</b> Заполняем имя, заливаем <b>1–2 нейтральных эстетичных видео</b> под трендовый звук — без текста про работу.</li>
+    <li><b>Готово?</b> Если видео набрало просмотры — аккаунт готов к работе.</li>
+  </ul>
+</div>
+
+<!-- ============ 3 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 3</span>
+  <h2>Кого <span class="r">ищем</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">3.1</span>Критерии кандидатки</h3>
+  <ul>
+    <li><b>Возраст на вид 18–27 лет.</b> Стройная, по лицу приятная — камера любит красивую картинку.</li>
+    <li><b>Живой акк:</b> свежие видео, есть контент, человек сидит в платформе.</li>
+    <li><b>Возраст уточняем в диалоге</b>, если есть сомнения — спрашиваем прямо.</li>
+  </ul>
+  <div class="quote"><span class="qt">Железное правило ▸</span> Меньше 18 — скип. Кандидатку нельзя регать на собеседование никак вообще. Возраст проверяем <b>до записи</b>, спокойно и без сцен: уточнили — пошли дальше.</div>
+</div>
+
+<!-- ============ 4 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 4</span>
+  <h2>Настройка <span class="r">ленты</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">4.1</span>Заставляем тикток работать на тебя</h3>
+  <ul>
+    <li>Лайкаешь и смотришь только <b>ролики девушек-контентмейкеров</b> и видео про заработок/подработку/эстетику.</li>
+    <li>На видео с парнями, мемами, геймингом — <b>«не интересно»</b>. Указываешь платформе, что это тебе не нужно.</li>
+    <li>Через 2–3 дня лента сама будет подсовывать целевых девушек — это твой основной источник кандидаток.</li>
+  </ul>
+</div>
+
+<!-- ============ 5 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 5</span>
+  <h2>Четыре способа <span class="r">найти</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">5.1</span>Способ 1 — из ленты, сразу в директ</h3>
+  <ul class="steps">
+    <li>Прогрел ленту → видишь девушку.</li>
+    <li><b>Подписываешься</b> на её акк.</li>
+    <li><b>Ставишь лайки</b> на 1–2 видео.</li>
+    <li>Только теперь <b>пишешь в директ</b>.</li>
+  </ul>
+  <div class="quote"><span class="qt">Важно ▸</span> Без подписки директ до неё, скорее всего, вообще не откроется. Подписка + лайки + сообщение — порядок не меняется.</div>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">5.2</span>Способ 2 — комментарии «жизни»</h3>
+  <ul>
+    <li>Ищем ролики про нехватку денег, учёбу, офис, усталость от работы.</li>
+    <li>Поисковые теги: <code>#ищуработу</code>, <code>#удаленкадлядевушек</code>, <code>#студентка</code>, <code>#буднистудентки</code>, <code>#усталаотработы</code>.</li>
+    <li>В комментах таких видео сидят девушки, которым прямо сейчас нужны деньги — это и есть тёплый вход.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">5.3</span>Способ 3 — лайвы (эфиры)</h3>
+  <ul>
+    <li>Смотришь эфиры: и кто стримит, и их зрители — все в кадре.</li>
+    <li>Пишешь возможным кандидаткам в личку, как в способе 1.</li>
+    <li>Девушки, которые ведут эфиры сами, — наша целевая аудитория, им предложение ближе всех.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">5.4</span>Способ 4 — комменты под видео скаутов</h3>
+  <ul>
+    <li>В тиктоке есть ролики в тематике «модельный скаут ищет моделей».</li>
+    <li>В комментариях таких видео <b>девушки сами кидают свои фото</b> и пишут, что хотят в модель.</li>
+    <li>Заходишь в такие ролики через поиск, отписываешься этим девушкам и пишешь в лс.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">5.5</span>Массовость — обязательно</h3>
+  <ul>
+    <li><b>Несколько аккаунтов</b> — основа работы. Один улетел в теневой бан, работаешь со следующего.</li>
+    <li><b>Комментов пишешь как можно больше</b> — в разных местах под разными видео. Это охват: по твоему комменту может написать не только та девушка, к чьему видео он стоит, но и все, кто листает комментарии. К тебе начинают приходить сами.</li>
+    <li><b>Подписки пакетом:</b> подписка → лайк → сообщение. Так тебя замечают как живой акк.</li>
+  </ul>
+</div>
+
+<!-- ============ 6 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 6</span>
+  <h2>Скрипты: комменты <span class="r">и личка</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">6.1</span>Комменты — два вида</h3>
+  <div class="quote"><span class="qt">Если знаешь имя ▸</span>«мелисса,привет
+я модельный скаут
+ответь мне в лс»</div>
+  <div class="quote"><span class="qt">Общий вариант ▸</span>«Привет! я модельный скаут,заинтересован в твоей модельной кандидатуре.Напиши,пожалуйста, в личные сообщения.»</div>
+  <p class="note">Подставляешь имя той девушки, под чьим видео пишешь. Ссылки, огромные тексты и спам в комменты не пихаем.</p>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">6.2</span>Пасты в личку — три варианта</h3>
+  <p><b>Паста 1 — короткая прямая:</b> заход одним сообщением, подробности после ответа.</p>
+  <div class="quote">«Привет! Я модельный скаут, занимаюсь подбором девочек на модельные пробы. Интересует?»</div>
+  <p><b>Второй шаг</b> (когда ответила):</p>
+  <div class="quote">«оки, вкратце работа заключается в проведении эфиров на зарубежных площадках.
+
+давай расскажу тебе за график и выплаты. график работы, 5/2 по 5-6 часов. выплаты переводим на любую карту рф или на крипту. девочки работающие по бартеру зарабатывают от 90000-120000 рублей в месяц.»</div>
+  <p><b>Паста 2 — мягкая, с хобби:</b></p>
+  <div class="quote">«приветик! 🫶
+
+у меня есть к тебе предложение. если интересно - расскажу подробнее. если нет, ничего страшного. мы ищем ведущую эфиров для разговорных и рекламных видео на платформах по типу Twitch (не вебка не онлик!). конечно это оплачивается ежедневно и будут приходить товары для рекламы, в основном косметика. зп 60-80к₽ в месяц с рекламой еще больше. еще привествуется наличие хобби, как тебе такая идея»</div>
+  <p><b>Паста 3 — полное описание команды:</b></p>
+  <div class="quote">«мы международная команда, которая работает с молодыми контент-мейкерами и помогает им превращать свою харизму и общение с аудиторией в хороший доход.
+
+Формат максимально простой: выходишь в эфир, общаешься со зрителями на темы, которые интересны именно им, а с нашей стороны - команда, контент-план, обучение и поддержка на всех этапах. Не нужно быть опытным блогером или заранее уметь что-то особенное - главное, чтобы ты была яркой и тебе нравилось общаться.
+
+По доходу: у новичков в среднем получается от 2 000 € в месяц, у опытных - около 3 000–4 000 €+, а верхней планки фактически нет. Можно выбрать удобный график и постепенно наращивать результат.
+
+короче, идея в том, чтобы ты занималась тем, что тебе и так нравится, а мы помогали это развивать и монетизировать.
+
+Как тебе вообще такой формат?»</div>
+  <div class="quote"><span class="qt">Важно про цифры ▸</span> В пастах суммы разные (90–120к / 60–80к / 2000€+). Выбирай <b>одну рабочую пасту на аккаунте</b> и работай с ней — на одном акке не светишь кандидатам разные цифры.</div>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">6.3</span>Перевод в телеграм</h3>
+  <p>Когда ответила «да / расскажи» — сразу уводим в ТГ, там и ведём дальше:</p>
+  <div class="quote">«Отлично! В Тиктоке сообщения часто теряются и не открываются ссылки.
+Давай перейдем в Телеграм — я сразу скину файл с условиями, платформами и примерами дохода.
+
+Напиши свой ник в ТГ или стукни мне сама: @твой_юзернейм»</div>
+</div>
+
+<!-- ============ 7 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 7</span>
+  <h2>Ролики с <span class="r">оффером</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">7.1</span>Входящий поток</h3>
+  <p>Тикток может сам приводить кандидаток, если выкладывать нормальные ролики. Формат простой:</p>
+  <ul>
+    <li><b>Видеоряд:</b> эстетичные видео — кофе, сборы (GRWM), ноутбук, работа. Без лица можно.</li>
+    <li><b>Один акк — одна линия:</b> ролики ставишь нейтральные «про формат», без обещаний.</li>
+  </ul>
+  <div class="quote"><span class="qt">Хук 1 ▸</span>«Разрушаю главный миф: разговорный стриминг — это не вебкам.
+Официальная модерация, строгие правила.
+Ведешь эфиры от 6 часов в день и закрываешь свои цели.
+Ищем девочек — условия в описании 👇»</div>
+  <div class="quote"><span class="qt">Хук 2 ▸</span>«Когда подруги пашут в найме за 40к с 9 до 18,
+а ты спокойно выходишь в разговорные эфиры...
+Набор открыт, инфа в описании».</div>
+  <div class="quote"><span class="qt">Описание под видео ▸</span>«Ищем общительных девушек на разговорный лайфстайл-стриминг (non-nude) 🤍 График гибкий от 6 часов в день, обучаем с нуля. Переходи в наш ТГ: @твой_канал или пиши в шапке профиля»</div>
+</div>
+
+<!-- ============ 8 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 8</span>
+  <h2>Правила <span class="r">безопасности</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">8.1</span>Фильтры платформы</h3>
+  <div class="table-wrap" style="overflow-x:auto;margin-top:6px">
+    <table class="tbl">
+      <thead>
+        <tr><th>Правило</th><th>Как работать</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Лимит сообщений</td><td>до <span class="hl">25–30 в день</span> с одного аккаунта</td></tr>
+        <tr><td>Паузы</td><td><span class="hl">2–4 минуты</span> между отправками, не слать всё за присест</td></tr>
+        <tr><td>Распределение</td><td>делим на <span class="hl">2–3 захода</span>: 10 днём, 10 вечером, 10 ближе к ночи</td></tr>
+        <tr><td>Ссылки в Direct</td><td><span class="bad">нельзя</span> — контакт даём только текстом <span class="ok">@username</span></td></tr>
+        <tr><td>Стоп-слова</td><td><span class="bad">вебкам, бабки, деньги, выплаты</span> → пишем <span class="ok">доход, онлайн-занятость, результаты</span></td></tr>
+        <tr><td>Перегруз</td><td>переусердствовал → <span class="bad">теневой бан</span>. Объём добираем аккаунтами, а не скоростью</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ 9 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 9</span>
+  <h2>Диалог <span class="r">после ответа</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">9.1</span>От ответа до собеса</h3>
+  <ul class="steps">
+    <li><b>Суть одним сообщением.</b> Эфиры на зарубежных площадках, non-nude — проговорили, дальше вопросы.</li>
+    <li><b>Её вопрос — твой ответ.</b> Возражения бери из базы: «вэбка?», «фикс?», «опыт?».</li>
+    <li><b>Зарплату называем только в месяц:</b> «90–120к ₽ в месяц». Не в час, не за смену.</li>
+    <li><b>Из тиктока — в ТГ</b> (скрипт в 6.3). Анкета и собес — там.</li>
+    <li><b>Анкета — 5 полей:</b> имя, юз, возраст (18+ строго), город, время собеса.</li>
+    <li><b>Запись на собес:</b> точный день и час, за 1–2 часа тихое напоминание.</li>
+  </ul>
+  <p class="note">Что делать дальше — анкета, CRM, передача и сопровождение описаны в <a href="../models/">основном мануале</a>.</p>
+</div>
+
+<!-- ============ 10 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 10</span>
+  <h2>Чек-лист перед <span class="r">стартом</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">10.1</span>Пробегись перед работой</h3>
+  <ul>
+    <li>Аккаунт прогрет <b>3 дня</b>?</li>
+    <li>Ник, био, аватар настроены по правилам?</li>
+    <li>Лимит соблюдаем: до 25–30, с паузами, по заходам?</li>
+    <li>Лента настроена под ЦА?</li>
+    <li>Есть запасной аккаунт?</li>
+    <li>Ссылок в директ нет, стоп-слов нет?</li>
+    <li>Возраст 18+ проверен до записи?</li>
+  </ul>
+</div>
+
+<!-- ============ 11 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 11</span>
+  <h2>Главные <span class="r">ошибки</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">11.1</span>Что убивает результат</h3>
+  <ul>
+    <li><b>Мало объёма.</b> Один коммент в день не катится. Отписки до лимита, потом следующий акк.</li>
+    <li><b>Скорость.</b> Всё за один присест = теневой бан. Паузы важнее скорости.</li>
+    <li><b>Ссылки в Direct.</b> Никогда.</li>
+    <li><b>Обещания фиксированных цифр.</b> Говорим про диапазон и «зависит от эфиров».</li>
+    <li><b>Написал и пропал.</b> После «да» ведёшь её в ТГ, собираешь анкету, записываешь на собес — маршрут до конца.</li>
+  </ul>
+</div>
+
+<footer>
+  TikTok Manual
+</footer>
+
+</div>
+
+<script>
+  document.documentElement.classList.add('js');
+  const bar = document.getElementById('progress');
+  addEventListener('scroll', () => {
+    const h = document.documentElement;
+    bar.style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+  }, { passive: true });
+
+  const io = new IntersectionObserver((entries) => {
+    let i = 0;
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const el = e.target;
+        setTimeout(() => el.classList.add('on'), i * 70);
+        i++;
+        io.unobserve(el);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>EVT Corp — старт в скаутинге</title>
+<style>
+  :root {
+    --bg: #000000;
+    --surface: #0c0c0f;
+    --surface-2: #121216;
+    --red: #ff1e3c;
+    --red-soft: #ff4d64;
+    --red-dim: #8b0f22;
+    --text: #e9e9ee;
+    --muted: #9a9aa6;
+    --line: #1e1e24;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.65;
+    padding: 0 16px 64px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  #progress {
+    position: fixed; top: 0; left: 0;
+    height: 2px; width: 0%;
+    background: var(--red);
+    z-index: 10;
+    transition: width .1s linear;
+  }
+
+  header { text-align: center; padding: 72px 0 48px; }
+  h1 {
+    font-size: clamp(30px, 5vw, 44px);
+    font-weight: 800;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  h1 .r { color: var(--red); }
+  .sub { color: var(--muted); font-size: 15px; margin-top: 10px; }
+  .divider { width: 64px; height: 2px; margin: 28px auto 0; background: var(--red); }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 48px;
+  }
+  .stats > div {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 20px 12px;
+    text-align: center;
+  }
+  .stats .num {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--red-soft);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .stats .cap { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
+  .part {
+    margin: 56px 0 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .part .lbl {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .part h2 {
+    font-size: 22px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+  .part h2 .r { color: var(--red); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 12px;
+    transition: border-color .2s ease;
+  }
+  .card:hover { border-color: #2e2e38; }
+  .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: #fff; }
+  .card h3 .idx {
+    color: var(--red-soft);
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    margin-right: 8px;
+  }
+  .card p + ul { margin-top: 10px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 7px; }
+  li::marker { color: var(--red-dim); }
+  b { color: #fff; }
+  .r { color: var(--red-soft); font-weight: 600; }
+  .note { color: var(--muted); font-size: 13px; margin-top: 12px; }
+
+  .quote {
+    border-left: 2px solid var(--red-dim);
+    background: var(--surface-2);
+    padding: 12px 16px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    color: #c9c9d4;
+    margin: 12px 0 4px;
+    font-size: 14.5px;
+  }
+  .quote .qt { color: var(--red-soft); font-weight: 700; font-style: normal; }
+
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+  .vs > div {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .vs .who {
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .vs .good { border-left: 2px solid var(--red-dim); }
+  .vs .good .who { color: var(--red-soft); }
+
+  .steps { counter-reset: step; list-style: none; padding-left: 0; }
+  .steps li {
+    list-style: none;
+    counter-increment: step;
+    position: relative;
+    padding-left: 38px;
+    margin-bottom: 12px;
+  }
+  .steps li::before {
+    content: counter(step, decimal-leading-zero);
+    position: absolute;
+    left: 0; top: 1px;
+    font-family: Consolas, monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--red-soft);
+  }
+
+  .btn {
+    display: inline-block;
+    background: var(--red);
+    color: #fff;
+    font-weight: 700;
+    padding: 12px 22px;
+    border-radius: 10px;
+    margin-top: 10px;
+    transition: filter .2s ease;
+  }
+  .btn:hover { text-decoration: none; filter: brightness(1.12); }
+  a { color: var(--red-soft); }
+  a:hover { text-decoration: underline; }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+
+  .js .reveal { opacity: 0; transform: translateY(16px); transition: opacity .5s ease, transform .5s ease; }
+  .js .reveal.on { opacity: 1; transform: none; }
+
+  :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+  @media (max-width: 620px) {
+    .vs { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .card { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div class="wrap">
+
+<header>
+  <h1>EVT<span class="r"> Corp</span></h1>
+  <div class="sub">Старт в скаутинге: направления, процесс и правила</div>
+  <div class="divider"></div>
+</header>
+
+<div class="stats">
+  <div><div class="num">3</div><div class="cap">направления работы</div></div>
+  <div><div class="num">6</div><div class="cap">шагов от поиска до сопровождения</div></div>
+</div>
+
+<div class="card reveal">
+  <h3>Добро пожаловать</h3>
+  <p>Здесь начинается твой путь в скаутинге.</p>
+  <p>Неважно, есть ли у тебя опыт или ты впервые сталкиваешься с этой сферой — мы подготовили базу знаний, которая поможет разобраться в рабочих процессах и постепенно перейти к практике. Внутри — инструкции, инструменты, готовые скрипты и материалы, которые понадобятся для работы.</p>
+  <p>Тебе не нужно изучать всё за один день. Двигайся последовательно, пробуй на практике и не бойся задавать вопросы.</p>
+  <p>Твоя задача сейчас — разобраться в основах и выбрать первое направление работы.</p>
+  <div class="quote"><span class="qt">Удачи ▸</span> Дальше — по шагам. Всё, что не понятно, разбираем вместе.</div>
+</div>
+
+<!-- ============ 1 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 1</span>
+  <h2>Направления <span class="r">работы</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">1.1</span>Модели</h3>
+  <p>Поиск моделей для сотрудничества с агентствами. Модели делятся на две категории:</p>
+  <ul>
+    <li><b>NON-NUDE</b> — форматы работы без обнажения.</li>
+    <li><b>NUDE</b> — форматы, предполагающие обнажение и взрослый контент. <span class="r">Строго 18+.</span></li>
+  </ul>
+  <p class="note">У каждого направления свои условия, требования и особенности — их разбираем в отдельных материалах.</p>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">1.2</span>Операторы</h3>
+  <ul>
+    <li>Поиск операторов для работы с онлайн-платформами.</li>
+    <li>Твоя задача — находить подходящих кандидатов, знакомить их с предложением и передавать на следующий этап отбора.</li>
+    <li><b>Набор операторов доступен только скаутам по операторам.</b> Отбор проходит <span class="r">9, 19 и 29 числа</span> каждого месяца.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">1.3</span>Рефералы</h3>
+  <ul>
+    <li>Поиск новых агентов — скаутов, которые занимаются привлечением кандидатов.</li>
+    <li>С самого начала можно искать <b>Non-Nude моделей и агентов</b>.</li>
+    <li>К <b>Nude</b> направлению можно присоединиться при желании и потребности агентства.</li>
+  </ul>
+</div>
+
+<!-- ============ 2 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 2</span>
+  <h2>Как устроена <span class="r">работа</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3>Скаутинг — это не рассылка</h3>
+  <p>Скаутинг — не просто поиск людей и отправка одинаковых сообщений всем подряд. Тебе предстоит общаться с разными людьми, заинтересовывать их предложением, отвечать на вопросы и находить подход к каждому.</p>
+  <p>Иногда диалог идёт легко, а иногда приходится думать, как лучше объяснить условия или продолжить разговор. <b>И это нормально.</b> Со временем ты начнёшь лучше понимать людей, замечать, что работает, и находить собственный подход.</p>
+</div>
+
+<div class="card reveal">
+  <h3>Шесть шагов</h3>
+  <ul class="steps">
+    <li><b>Подготовка.</b> Подготовь рабочие аккаунты, изучи площадки и разберись, какое предложение ты будешь представлять кандидатам.</li>
+    <li><b>Поиск.</b> Ищи подходящих людей и обращай внимание на их профили. Понимай, кому действительно может подойти твоё предложение.</li>
+    <li><b>Общение.</b> Не ограничивайся механической отправкой. Пробуй разные варианты первого обращения, учись поддерживать диалог и заранее продумывай ответы на возможные вопросы.</li>
+    <li><b>Собеседование.</b> Если кандидат заинтересовался — попроси данные для анкеты и согласуй удобное время собеседования.</li>
+    <li><b>Передача кандидата.</b> Заполни данные, передай информацию ответственному и зафиксируй текущий статус.</li>
+    <li><b>Сопровождение.</b> Не пропадай после передачи: интересуйся, как дела, всё ли понятно и не возникли ли сложности — особенно во время стажировки. Фиксируй результаты и анализируй работу.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3>Не бойся пробовать</h3>
+  <ul>
+    <li>Не каждое сообщение приведёт к диалогу, и не каждый заинтересовавшийся дойдёт до конца. <b>Это часть работы.</b></li>
+    <li>Пробуй разные подходы, наблюдай за результатами, делай выводы и постепенно развивай навыки.</li>
+    <li>Тебе не нужно быть идеальным с первого дня. Гораздо важнее — инициатива, практика и не оставаться с вопросами один на один.</li>
+  </ul>
+</div>
+
+<!-- ============ 3 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 3</span>
+  <h2>Поиск <span class="r">кандидата</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3>Сначала пойми, кого ищем</h3>
+  <p>Поиск начинается не с отправки сообщений всем подряд, а с понимания, кого именно мы ищем и кому наше предложение действительно может подойти. В EVT несколько направлений, и у каждого свои особенности — перед поиском обязательно разберись в своём.</p>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">3.1</span>Модели</h3>
+  <ul>
+    <li>Ищем девушек <b>от 18 до 25 лет</b>, которым комфортно находиться перед камерой и создавать визуальный контент.</li>
+    <li>В профиле смотри на <b>активность, фотографии, видео</b>, интерес к съёмкам и то, насколько человек естественно чувствует себя перед камерой.</li>
+    <li>Для <b>NON-NUDE</b> и <b>NUDE</b> действуют разные условия — изучи описание конкретного направления, прежде чем предлагать работу.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">3.2</span>Операторы</h3>
+  <ul>
+    <li>Ищем кандидатов <b>от 18 до 30 лет</b>, независимо от пола.</li>
+    <li>Важно учитывать <b>системные требования</b>, качество и стабильность интернета, а также готовность работать по предлагаемому графику.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">3.3</span>Агенты</h3>
+  <ul>
+    <li>Ищем людей, которым интересно заниматься поиском кандидатов, общением и развитием в рекрутинге.</li>
+    <li>Здесь важнее <b>желание работать, инициативность и готовность учиться</b>. Возраст сам по себе не главный критерий, но требования к работе соблюдаются.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3>Главное правило поиска</h3>
+  <ul>
+    <li>Не предлагай одну и ту же работу каждому, кого нашёл.</li>
+    <li>Сначала оцени, насколько человеку подходит направление, и только потом начинай диалог.</li>
+    <li>Сомневаешься, подходит ли кандидат, — <span class="r">согласуй со своим тимлидом или сквадлидом</span>.</li>
+  </ul>
+</div>
+
+<!-- ============ 4 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 4</span>
+  <h2>Правила <span class="r">EVT</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">4.1</span>Созвоны</h3>
+  <ul>
+    <li>Участвуй в <b>обязательных созвонах</b>.</li>
+    <li>Не можешь присутствовать — <b>предупреди заранее</b>.</li>
+    <li>Пропуск без причины может повлечь предупреждение.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">4.2</span>Ответственность</h3>
+  <ul>
+    <li>Соблюдай рабочую дисциплину.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">4.3</span>Границы</h3>
+  <ul>
+    <li>Не вступай с моделями в романтические или сексуальные отношения в рамках работы.</li>
+    <li>Сохраняй <b>профессиональную дистанцию</b>.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">4.4</span>Выходные</h3>
+  <ul>
+    <li>Предупреждай о выходных <b>заранее</b>.</li>
+    <li>Возникли непредвиденные обстоятельства — сообщи <b>при первой возможности</b>.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">4.5</span>CRM</h3>
+  <ul>
+    <li>Проверяй данные <b>перед отправкой анкеты</b>.</li>
+    <li>Заполняй обязательные поля и убедись, что кандидат соответствует требованиям.</li>
+    <li>Ошибки и несоблюдение требований могут повлечь <b>выговор</b>.</li>
+  </ul>
+  <div class="quote"><span class="qt">Важно ▸</span> Возникли вопросы или сложности — не пропадай. Напиши своему <b>тимлиду или сквадлиду</b>, и вы вместе разберётесь.</div>
+</div>
+
+<!-- ============ 5 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 5</span>
+  <h2>Discord <span class="r">агентства</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">5.1</span>Аккаунт</h3>
+  <ul>
+    <li><b>Ник:</b> (свой ник) | EVT.</li>
+    <li><b>Юзернейм:</b> любой, но в рамках разумного и чтобы выглядел хорошо.</li>
+    <li><b>Аватарка:</b> любая, но в рамках разумного и эстетично.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3><span class="idx">5.2</span>Почему нужно быть в Discord</h3>
+  <ul>
+    <li>Работа агентства <b>перенесена в Discord</b>. Все скауты заходят на сервер; не можешь — сообщи причину.</li>
+    <li>В свободное время нужно <b>сидеть в Discord, общаться и работать одновременно</b>.</li>
+    <li>Представь картину для новичка: на сервере актив <span class="r">200–300 человек</span>, и он всегда может зайти и спросить у опытных менторов что да как. Это же относится и к тебе.</li>
+    <li>Простое общение на перерывах и отдыхе никто не отменял — можно ходить по румам (желательно свой сквад) и узнавать много полезного от менторов.</li>
+    <li>Можно показывать <b>свои кейсы менторам</b>, чтобы они разобрали ошибки.</li>
+    <li>Старайся работать с <b>включённой демонстрацией экрана</b> — менторы смогут смотреть и корректировать твою работу.</li>
+  </ul>
+</div>
+
+<!-- ============ 6 ============ -->
+<div class="part reveal">
+  <span class="lbl">Раздел 6</span>
+  <h2>Вопросы <span class="r">и помощь</span></h2>
+</div>
+
+<div class="card reveal">
+  <h3>Самый тупой вопрос</h3>
+  <div class="quote"><span class="qt">Правило ▸</span> Самый тупой вопрос — тот, на который ты потратил три часа.</div>
+  <ul>
+    <li>У всех скаутов что-то не получается. Обычно 20 минут тыкаешься сам, потом идёшь в Google, спрашиваешь у нейросети, думаешь, что площадка именно против тебя устроила заговор. Проходит три часа.</li>
+    <li>Наконец пишешь другому агенту — и он за <b>2 минуты</b> решает проблему. Потому что это малоизвестный баг для Google, но опытные скауты про него знают.</li>
+    <li>Умение самостоятельно решать проблемы — важный навык. Но есть огромная разница между <b>самостоятельностью</b> и <b>бессмысленным героизмом</b>.</li>
+  </ul>
+</div>
+
+<div class="card reveal">
+  <h3>Используй коллективный опыт</h3>
+  <ul>
+    <li>В команде полно скаутов: кто-то работает с твоим ГЕО, кто-то использует тот же источник, кто-то уже видел твою ошибку, кто-то неделю назад решал ровно ту же проблему.</li>
+    <li>Если каждый молча решает всё сам — это не команда, а несколько одиночек в одном чате.</li>
+  </ul>
+  <div class="quote"><span class="qt">Формула ▸</span> Увидел проблему → попробовал решить → не получилось → спросил. Нашёл решение → не оставил себе → рассказал остальным.</div>
+  <ul>
+    <li>Сегодня тебе сэкономили три часа. Завтра ты сэкономишь три часа другому. А через год внутри команды появляется база знаний, которую одному человеку пришлось бы собирать годами.</li>
+    <li><b>Задавать вопросы не стыдно.</b> Стыдно месяцами оставаться на том же месте только потому, что постеснялся показать, что чего-то не знаешь.</li>
+  </ul>
+</div>
+
+<footer>
+  EVT Corp · старт в скаутинге
+</footer>
+
+</div>
+
+<script>
+  document.documentElement.classList.add('js');
+  const bar = document.getElementById('progress');
+  addEventListener('scroll', () => {
+    const h = document.documentElement;
+    bar.style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+  }, { passive: true });
+
+  const io = new IntersectionObserver((entries) => {
+    let i = 0;
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const el = e.target;
+        setTimeout(() => el.classList.add('on'), i * 70);
+        i++;
+        io.unobserve(el);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>
